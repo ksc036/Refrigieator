@@ -1,39 +1,23 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack
+      // 앱이 처음 실행될 때 "(tabs)" 폴더를 기본 라우트로 사용
+      initialRouteName="(tabs)"
+      screenOptions={{
+        headerStyle: { backgroundColor: "#fff" },
+        headerTintColor: "#007AFF",
+      }}
+    >
+      {/* (tabs) 폴더를 스크린처럼 등록 */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+      {/* 404 페이지 등록 (잘못된 URL 접근 시) */}
+      <Stack.Screen
+        name="+not-found"
+        options={{ title: "페이지를 찾을 수 없음" }}
+      />
+    </Stack>
   );
 }
