@@ -1,11 +1,13 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setFreezer, setFridge } from "@/store/storageModeSlice";
+import { getDb } from "@/services/database";
 export default function TabsLayout() {
+  // const dispatch = useDispatch();
   return (
     <Tabs
-      // 탭의 첫 화면을 "freezer" 스크린으로 지정
-      initialRouteName="fridge"
       screenOptions={{
         headerStyle: { backgroundColor: "#fff" },
         headerTintColor: "#007AFF",
@@ -32,9 +34,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="smartScan"
+        name="ready"
         options={{
-          title: "Smart Scan",
+          title: "ready",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="scan" size={size} color={color} />
           ),

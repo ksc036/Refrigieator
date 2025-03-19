@@ -6,10 +6,11 @@ import { useRouter } from "expo-router";
 import { getDb } from "@/services/database";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
-import { addFreezer, addFridge } from "@/store/storageModeSlice";
+import { addFreezerReady, addFridgeReady } from "@/store/storageModeSlice";
 import { useFocusEffect } from "@react-navigation/native";
-import { Refrigerator, RefrigeratorItem } from "@/types";
-import { insertItemToRefridge } from "@/utils/insert";
+import { RefrigeratorReadyItem } from "@/types";
+import { insertReadyItem, insertAllReadyItemToRefridge } from "@/utils/insert";
+
 export default function FloatingButton() {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -55,6 +56,52 @@ export default function FloatingButton() {
       setIsOpen(false); // 메뉴 닫기
     }
   };
+
+  // const insert = async () => {
+  //   const food_item_id: number = 1;
+  //   const status = isFreezer ? "FREEZER" : "FRIDGE";
+  //   const db = await getDb();
+
+  //   let statement; // 블록 바깥에서 선언
+  //   if (isFreezer) {
+  //     statement = await db.prepareAsync(
+  //       `INSERT INTO PRESTORAGE (food_item_id, status) VALUES ($food_item_id, $status)`
+  //     );
+  //   } else {
+  //     statement = await db.prepareAsync(
+  //       `INSERT INTO PRESTORAGE (food_item_id, status) VALUES ($food_item_id, $status)`
+  //     );
+  //   }
+
+  //   try {
+  //     const result = await statement.executeAsync({
+  //       $food_item_id: food_item_id,
+  //       $status: status,
+  //     });
+
+  //     const item = await db.getFirstAsync(
+  //       "select PRESTORAGE.id id,* from PRESTORAGE LEFT JOIN FOODITEMS on PRESTORAGE.food_item_id = FOODITEMS.id where PRESTORAGE.id = $id",
+  //       result.lastInsertRowId
+  //     );
+  //     console.log("item출력 : " + item);
+
+  //     const instance: RefrigeratorReadyItem = {
+  //       id: result.lastInsertRowId,
+  //       status: isFreezer ? "freezer" : "fridge",
+  //       name: item.name,
+  //     };
+  //     console.log("--------------------- instance", instance);
+  //     if (isFreezer) {
+  //       dispatch(addFreezerReady(instance));
+  //     } else {
+  //       dispatch(addFridgeReady(instance));
+  //     }
+  //   } catch (err) {
+  //     console.log("냉동실 아이템 추가 에러:", err);
+  //   } finally {
+  //     await statement.finalizeAsync();
+  //   }
+  // };
   return (
     <View style={styles.container}>
       {isOpen && (
@@ -70,11 +117,20 @@ export default function FloatingButton() {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
-              insertItemToRefridge(4, isFreezer, dispatch);
+              insertReadyItem(4, isFreezer, dispatch);
             }}
           >
             <Ionicons name="search-outline" size={24} color="white" />
             <Text style={styles.menuText}>검색</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => {
+              insertAllReadyItemToRefridge(dispatch);
+            }}
+          >
+            <Ionicons name="search-outline" size={24} color="white" />
+            <Text style={styles.menuText}>동기화</Text>
           </TouchableOpacity>
         </View>
       )}
