@@ -6,41 +6,25 @@ import { useRouter } from "expo-router";
 import { getDb } from "@/services/database";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
-import { addFreezer, addFridge } from "@/store/storageModeSlice";
+import { addFreezer, addFridge, setText } from "@/store/storageModeSlice";
 import { useFocusEffect } from "@react-navigation/native";
 import { Refrigerator, RefrigeratorItem } from "@/types";
 import { insertItemToRefridge } from "@/utils/insert";
+import { pickImage } from "@/utils/image";
 export default function FloatingButton() {
   const router = useRouter();
   const dispatch = useDispatch();
   const isFreezer = useSelector((stat) => stat.storageMode.isfreezer);
   const freezer = useSelector((stat) => stat.storageMode.freezer);
   const fridge = useSelector((stat) => stat.storageMode.fridge);
+  const text = useSelector((stat) => stat.storageMode.text);
   const [isOpen, setIsOpen] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
-      console.log("isFreezer 상태 체크 ", isFreezer);
+      // console.log("isFreezer 상태 체크 ", isFreezer);
     }, [isFreezer])
   );
-  // 📌 갤러리에서 이미지 선택
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      router.push({
-        pathname: "/ready",
-        params: { imageUri: result.assets[0].uri },
-      });
-      setIsOpen(false); // 메뉴 닫기
-    }
-  };
-
-  // 📌 카메라로 사진 촬영
   const takePhoto = async () => {
     let result = await ImagePicker.launchCameraAsync({
       allowsEditing: false,
@@ -48,9 +32,28 @@ export default function FloatingButton() {
     });
 
     if (!result.canceled) {
+      const localUri = result.assets[0].uri;
+      const formData = new FormData();
+
+      formData.append("file", {
+        uri: localUri,
+        name: "upload.jpg", // 파일 이름 (아무거나)
+        type: "image/jpeg", // MIME 타입
+      });
+      // Flask 서버에 POST 요청
+      const response = await fetch("https://ocr.ksc036.store/ocr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+      // 응답 수신
+      const data = await response.json();
+      dispatch(setText(data["text"]));
+
       router.push({
         pathname: "/ready",
-        params: { imageUri: result.assets[0].uri },
       });
       setIsOpen(false); // 메뉴 닫기
     }
@@ -63,18 +66,14 @@ export default function FloatingButton() {
             <Ionicons name="camera" size={24} color="white" />
             <Text style={styles.menuText}>사진 촬영</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuButton} onPress={pickImage}>
-            <Ionicons name="images" size={24} color="white" />
-            <Text style={styles.menuText}>갤러리 선택</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
-              insertItemToRefridge(4, isFreezer, dispatch);
+              pickImage(dispatch, router, setIsOpen);
             }}
           >
-            <Ionicons name="search-outline" size={24} color="white" />
-            <Text style={styles.menuText}>검색</Text>
+            <Ionicons name="images" size={24} color="white" />
+            <Text style={styles.menuText}>갤러리 선택</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -100,8 +99,8 @@ const styles = StyleSheet.create({
   menu: {
     marginBottom: 10,
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "black",
+    // borderWidth: 2,
+    // borderColor: "black",
   },
   menuButton: {
     flexDirection: "row",

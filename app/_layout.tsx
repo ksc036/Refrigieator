@@ -1,10 +1,17 @@
 // RootLayout.tsx
-import { Stack } from "expo-router";
+import { router, Stack, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { getDb } from "@/services/database";
 import ReduxProvider from "@/store/ReduxProvider";
+// 아래 2개는 “오른쪽→왼쪽” 전환을 위해 필요
+import { CardStyleInterpolators } from "@react-navigation/stack";
+import { TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { FOOD_ITEMS_QUERY } from "@/services/itemQueries";
 
 export default function RootLayout() {
+  const segments = useSegments();
+  const activeSegment = segments[segments.length - 1] ?? "Loading...";
   useEffect(() => {
     // 앱 실행 시 한 번 DB 셋업
     async function setupDatabase() {
@@ -52,12 +59,7 @@ export default function RootLayout() {
           );
           console.log("Count:", result["COUNT(*)"]);
           if (result["COUNT(*)"] == 0) {
-            await db.execAsync(`
-              INSERT INTO FOODITEMS (name, refrigerated_shelf_life, frozen_shelf_life, category) 
-              VALUES ('우유', 7, 30 , '유제품'),
-            ('목전지', 10 , 100 , '고기'),
-            ('마늘' , 20, 25 , '야채');
-            `);
+            await db.execAsync(FOOD_ITEMS_QUERY);
           }
         });
       } catch (err) {
@@ -73,11 +75,27 @@ export default function RootLayout() {
       <Stack
         initialRouteName="(tabs)"
         screenOptions={{
+          title: activeSegment,
           headerStyle: { backgroundColor: "#fff" },
           headerTintColor: "#007AFF",
+          animation: "slide_from_right",
+          headerRight: () => (
+            <TouchableOpacity onPress={() => router.push("/search")}>
+              <View style={{ marginRight: 16 }}>
+                <Ionicons name="search" size={24} color="#007AFF" />
+              </View>
+            </TouchableOpacity>
+          ),
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(tabs)"
+          // options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="search"
+          options={{ title: "검색" }} // 검색 화면
+        />
         <Stack.Screen
           name="+not-found"
           options={{ title: "페이지를 찾을 수 없음" }}

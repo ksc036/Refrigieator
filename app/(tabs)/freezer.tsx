@@ -21,7 +21,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { setFreezer, setFridge } from "@/store/storageModeSlice";
 import { Refrigerator, RefrigeratorItem } from "@/types";
-import { readReFrigerator } from "@/utils/select";
+import { readReadyItem, readReFrigerator } from "@/utils/select";
 
 export default function FreezerScreen() {
   const router = useRouter();
@@ -84,41 +84,18 @@ export default function FreezerScreen() {
     return diff >= 0 ? `D-${diff}` : `유통기한 지남`;
   };
 
-  // 냉동실 아이템 추가
-  // const handleAdd = async () => {
-  //   const name = "냉동 테스트 식품";
-  //   const createdDate = dayjs().format("YYYY-MM-DD");
-  //   const endDate = dayjs(createdDate).add(30, "day").format("YYYY-MM-DD");
-
-  //   const db = await getDb();
-  //   const statement = await db.prepareAsync(
-  //     `INSERT INTO REFRIGERATOR (name, status, created_date, end_date) VALUES ($name, $status, $created_date, $end_date)`
-  //   );
-  //   try {
-  //     await statement.executeAsync({
-  //       $name: name,
-  //       $status: "냉동",
-  //       $created_date: createdDate,
-  //       $end_date: endDate,
-  //     });
-  //   } catch (err) {
-  //     console.log("냉동실 아이템 추가 에러:", err);
-  //   } finally {
-  //     await statement.finalizeAsync();
-  //   }
-  // };
-
   const test = async () => {
+    // router.push("../search");
     const db = await getDb();
     try {
-      await db.runAsync("delete from REFRIGERATOR");
-      await db.runAsync("delete from PRESTORAGE");
+      // await db.runAsync("delete from REFRIGERATOR");
+      // await db.runAsync("delete from PRESTORAGE");
       // await db.runAsync("delete from FOODITEMS");
       // dispatch(setFridge([]));
       // dispatch(setFreezer([]));
       console.log(await db.getAllAsync("SELECT * from REFRIGERATOR"));
       console.log(await db.getAllAsync("SELECT * from PRESTORAGE"));
-      // console.log(await db.getAllAsync("SELECT * from FOODITEMS"));
+      console.log(await db.getAllAsync("SELECT * from FOODITEMS"));
       // console.log("fridge======================", fridge);
       // console.log("freezer======================", freezer);
       // console.log("====================================");
@@ -151,7 +128,7 @@ export default function FreezerScreen() {
 
   return (
     <View style={styles.container}>
-      <Button title="test" onPress={test}></Button>
+      {/* <Button title="test" onPress={test}></Button> */}
       <View style={styles.content}>
         <FlatList
           data={freezer}

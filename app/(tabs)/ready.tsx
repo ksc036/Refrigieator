@@ -7,7 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import TextRecognition, {
   TextRecognitionScript,
 } from "@react-native-ml-kit/text-recognition";
@@ -20,56 +20,53 @@ import {
   removeFridgeReadyItemById,
   toggleFreezerReadyItemById,
   toggleFridgeReadyItemById,
+  setText,
+  setFreezerReady,
+  setFridge,
+  setFridgeReady,
 } from "@/store/storageModeSlice";
 import { RefrigeratorReadyItem } from "@/types";
 import { getDb } from "@/services/database";
-import { insertReadyItem } from "@/utils/insert";
+import { insertAllReadyItemToRefridge, insertReadyItem } from "@/utils/insert";
+import FloatingButton from "@/components/FloatingButton";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SmartSelectScreen() {
   const { imageUri } = useLocalSearchParams();
-  const [extractedText, setExtractedText] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // const [extractedText, setExtractedText] = useState<string | null>(null);
+  // const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
+
   //   const isfreezer = useSelector((stat: any) => stat.storageModeSlice.isfreezer);
   const isfreezer = useSelector((stat: any) => stat.storageMode.isfreezer);
   const fridgeReady = useSelector((stat: any) => stat.storageMode.fridgeReady);
   const freezerReady = useSelector(
     (stat: any) => stat.storageMode.freezerReady
   );
+  const text = useSelector((stat: any) => stat.storageMode.text);
+
   useEffect(() => {
+    console.log("text 확인 +===================================", text);
     const processImage = async () => {
       try {
-        if (!imageUri) {
-          setExtractedText("이미지를 찾을 수 없습니다.");
-          setLoading(false);
-          return;
-        }
-
-        // 📌 OCR 실행
-        const result = await TextRecognition.recognize(
-          imageUri,
-          TextRecognitionScript.KOREAN
-        );
-        // console.log(result);
-        // setExtractedText(result.text || "텍스트를 추출할 수 없습니다.");
-        // console.log(extractedText);
         const db = await getDb();
         for await (const row of db.getEachAsync("select * FROM FOODITEMS")) {
-          if (result.text.includes(row.name)) {
-            console.log(row.id);
+          if (text.includes(row.name)) {
+            // console.log(row.id);
             insertReadyItem(row.id, isfreezer, dispatch);
           }
         }
       } catch (error) {
         console.error("OCR 에러:", error);
-        setExtractedText("텍스트 추출 실패");
+        // setExtractedText("텍스트 추출 실패");
       } finally {
-        setLoading(false);
+        // setLoading(false);
+        dispatch(setText(""));
       }
     };
 
     processImage();
-  }, [imageUri]);
+  }, [text]);
 
   const modeChange = (isFreezer: boolean) => {
     if (isFreezer) {
@@ -78,17 +75,21 @@ export default function SmartSelectScreen() {
       dispatch(setModeFridge());
     }
   };
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (item: RefrigeratorReadyItem) => {
     const db = await getDb();
     const statement = await db.prepareAsync(
       "DELETE FROM PRESTORAGE WHERE id = $id"
     );
+    console.log(item);
+    let status = item.status;
     try {
-      await statement.executeAsync({ $id: id });
-      if (isfreezer) {
-        dispatch(removeFreezerReadyItemById(id));
+      await statement.executeAsync({ $id: item.id });
+      if (status === "FREEZER") {
+        dispatch(setModeFreezer());
+        dispatch(removeFreezerReadyItemById(item.id));
       } else {
-        dispatch(removeFridgeReadyItemById(id));
+        dispatch(setModeFridge());
+        dispatch(removeFridgeReadyItemById(item.id));
       }
     } catch (err) {
       console.log("냉동실 삭제에러", err);
@@ -100,22 +101,36 @@ export default function SmartSelectScreen() {
     //1. db변경
     try {
       const db = await getDb();
+      let status = item.status;
       const statement = await db.prepareAsync(
         "update PRESTORAGE set status = $status where id = $id"
       );
       await statement.executeAsync({
-        $status: isfreezer ? "FREEZER" : "FRIDGE",
+        $status: status === "FRIDGE" ? "FREEZER" : "FRIDGE",
         $id: item.id,
       });
 
-      if (isfreezer) {
+      if (status === "FREEZER") {
+        dispatch(setModeFreezer());
         dispatch(toggleFreezerReadyItemById(item.id));
       } else {
+        dispatch(setModeFridge());
         dispatch(toggleFridgeReadyItemById(item.id));
       }
     } catch (err) {
       console.log("toggle에러", err);
     }
+  };
+  const resetButton = async (isFreezer: boolean) => {
+    const db = await getDb();
+    if (isFreezer) {
+      await db.runAsync("delete from PRESTORAGE where status = 'FREEZER'");
+      dispatch(setFreezerReady([]));
+    } else {
+      await db.runAsync("delete from PRESTORAGE where status = 'FRIDGE'");
+      dispatch(setFridgeReady([]));
+    }
+    // console.log(await db.getAllAsync("select * from PRESTORAGE"));
   };
   const renderItem = ({ item }: { item: RefrigeratorReadyItem }) => (
     <View style={{ flex: 1, flexDirection: "row" }}>
@@ -124,7 +139,7 @@ export default function SmartSelectScreen() {
       <TouchableOpacity
         onPress={(e) => {
           e.stopPropagation(); // 터치 이벤트가 부모로 전달되지 않도록 차단
-          handleDelete(item.id);
+          handleDelete(item);
         }}
         onPressOut={() => modeChange(isfreezer)} // 부모 Pressable의 onPress 수동 실행
       >
@@ -132,7 +147,7 @@ export default function SmartSelectScreen() {
       </TouchableOpacity>
       <TouchableOpacity
         onPress={(e) => {
-          e.stopPropagation(); // 터치 이벤트가 부모로 전달되지 않도록 차단
+          // e.stopPropagation(); // 터치 이벤트가 부모로 전달되지 않도록 차단
           toggle(item);
         }}
         onPressOut={() => modeChange(isfreezer)} // 부모 Pressable의 onPress 수동 실행
@@ -147,10 +162,15 @@ export default function SmartSelectScreen() {
       <Pressable
         style={[styles.content, isfreezer ? styles.inactive : styles.active]}
         onPress={() => modeChange(false)}
-        onStartShouldSetResponder={() => true} // 이벤트 버블링 활성화
-        onPressIn={() => modeChange(false)} // 터치가 감지되었을 때 실행
       >
-        <Text>냉장</Text>
+        <View style={styles.row}>
+          <Text>냉장 </Text>
+          {fridgeReady.length != 0 && (
+            <Pressable onPress={() => resetButton(false)}>
+              <Text style={styles.reset}>리셋</Text>
+            </Pressable>
+          )}
+        </View>
         <FlatList
           data={fridgeReady}
           keyExtractor={(item) => item.id.toString()}
@@ -161,10 +181,16 @@ export default function SmartSelectScreen() {
       <Pressable
         style={[styles.content, isfreezer ? styles.active : styles.inactive]}
         onPress={() => modeChange(true)}
-        onStartShouldSetResponder={() => true} // 이벤트 버블링 활성화
-        onPressIn={() => modeChange(true)} // 터치가 감지되었을 때 실행
       >
-        <Text>냉동</Text>
+        <View style={styles.row}>
+          <Text>냉동</Text>
+          {freezerReady.length != 0 && (
+            <Pressable onPress={() => resetButton(true)}>
+              <Text style={styles.reset}>리셋</Text>
+            </Pressable>
+          )}
+        </View>
+
         <FlatList
           data={freezerReady}
           keyExtractor={(item) => item.id.toString()}
@@ -172,7 +198,22 @@ export default function SmartSelectScreen() {
           style={{ width: "100%" }}
         />
       </Pressable>
-      <FloatingButtonInReady />
+      <FloatingButton />
+      {fridgeReady.length + freezerReady.length > 0 && (
+        <TouchableOpacity
+          style={styles.syncButton}
+          onPress={() => {
+            insertAllReadyItemToRefridge(dispatch);
+            if (fridgeReady.length > freezerReady.length) {
+              router.push("/fridge");
+            } else {
+              router.push("/freezer");
+            }
+          }}
+        >
+          <Ionicons name={"sync-outline"} size={30} color="white" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -184,6 +225,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
+  syncButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 30,
+    position: "absolute",
+    bottom: 40,
+    right: 35,
+    alignItems: "center",
+  },
   image: {
     width: 300,
     height: 400,
@@ -192,7 +241,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    borderWidth: 1,
+    // borderWidth: 1,
     width: "100%",
   },
   active: {
@@ -200,5 +249,13 @@ const styles = StyleSheet.create({
   },
   inactive: {
     backgroundColor: "transparent",
+  },
+  row: {
+    flexDirection: "row",
+  },
+  reset: {
+    backgroundColor: "red",
+    color: "white",
+    borderRadius: 3,
   },
 });

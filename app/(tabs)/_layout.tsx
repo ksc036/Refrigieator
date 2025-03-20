@@ -4,15 +4,22 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { setFreezer, setFridge } from "@/store/storageModeSlice";
 import { getDb } from "@/services/database";
+import { readReadyItem, readReFrigerator } from "@/utils/select";
+
 export default function TabsLayout() {
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
+  useEffect(() => {
+    readReFrigerator(dispatch); //reFridge Setting
+    readReadyItem(dispatch); //readyItemSetting
+  }, []);
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: "#fff" },
-        headerTintColor: "#007AFF",
-        tabBarStyle: { backgroundColor: "#fff", paddingBottom: 10 },
-        tabBarActiveTintColor: "#007AFF",
+        // headerStyle: { backgroundColor: "#fff" },
+        // headerTintColor: "#007AFF",
+        // tabBarStyle: { backgroundColor: "#fff", paddingBottom: 10 },
+        // tabBarActiveTintColor: "#007AFF",
+        headerShown: false,
       }}
     >
       <Tabs.Screen

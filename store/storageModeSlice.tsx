@@ -7,6 +7,7 @@ const initialState = {
   fridge: [] as RefrigeratorItem[],
   freezerReady: [] as RefrigeratorReadyItem[],
   fridgeReady: [] as RefrigeratorReadyItem[],
+  text: "" as string,
 };
 
 const storageModeSlice = createSlice({
@@ -68,7 +69,10 @@ const storageModeSlice = createSlice({
         (obj: RefrigeratorReadyItem) => obj.id === action.payload
       );
       if (index !== -1) {
-        stat.fridgeReady.push(stat.freezerReady.splice(index, 1)[0]);
+        stat.fridgeReady.push({
+          ...stat.freezerReady.splice(index, 1)[0],
+          status: "FRIDGE",
+        });
       }
     },
     toggleFridgeReadyItemById: (stat, action: PayloadAction<number>) => {
@@ -76,8 +80,14 @@ const storageModeSlice = createSlice({
         (obj: RefrigeratorReadyItem) => obj.id === action.payload
       );
       if (index !== -1) {
-        stat.freezerReady.push(stat.fridgeReady.splice(index, 1)[0]);
+        stat.freezerReady.push({
+          ...stat.fridgeReady.splice(index, 1)[0],
+          status: "FREEZER",
+        });
       }
+    },
+    setText: (stat, action) => {
+      stat.text = action.payload;
     },
   },
 });
@@ -99,5 +109,6 @@ export const {
   removeFridgeReadyItemById,
   toggleFreezerReadyItemById,
   toggleFridgeReadyItemById,
+  setText,
 } = storageModeSlice.actions; // 액션 export
 export default storageModeSlice.reducer; // 리듀서 export

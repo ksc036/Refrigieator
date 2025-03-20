@@ -49,7 +49,7 @@ export const insertItemToRefridge = async (
 
     const instance: RefrigeratorItem = {
       id: result.lastInsertRowId,
-      status: isFreezer ? "freezer" : "fridge",
+      status: isFreezer ? "FREEZER" : "FRIDGE",
       create_date: item.created_date,
       name: item.name,
       refrigerated_shelf_life: item.refrigerated_shelf_life,
@@ -97,12 +97,12 @@ export const insertReadyItem = async (
       "select PRESTORAGE.id id,* from PRESTORAGE LEFT JOIN FOODITEMS on PRESTORAGE.food_item_id = FOODITEMS.id where PRESTORAGE.id = $id",
       result.lastInsertRowId
     );
-    console.log("item출력 : " + item.id);
+    console.log("item출력 : " + item.id, item.name, item.food_item_id);
 
     const instance: RefrigeratorReadyItem = {
       id: result.lastInsertRowId,
       name: item.name,
-      status: isFreezer ? "freezer" : "fridge",
+      status: isFreezer ? "FREEZER" : "FRIDGE",
     };
     console.log("--------------------- instance", instance);
     if (isFreezer) {
@@ -131,6 +131,29 @@ SELECT food_item_id, status, $created_date created_date FROM PRESTORAGE
     readReFrigerator(dispatch);
     dispatch(setFridgeReady([]));
     dispatch(setFreezerReady([]));
+  } catch (err) {
+    console.log("err발생 in insertReadyItemToRefridge", err);
+  } finally {
+  }
+};
+export const insertSearchItemToRefridge = async (dispatch: Dispatch, items) => {
+  // console.log("inset함수 CALL", items);
+  try {
+    const db = await getDb();
+    //db옮기고
+    let query = `INSERT INTO REFRIGERATOR (food_item_id, status, created_date)  VALUES ${items
+      .map(
+        (item) =>
+          `(${item.id}, '${
+            item.isFreezer ? "FREEZER" : "FRIDGE"
+          }', '${dayjs().format("YYYY-MM-DD")}')`
+      )
+      .join(", ")};
+`;
+    console.log(query);
+    await db.runAsync(query);
+    //redux옮기기
+    readReFrigerator(dispatch);
   } catch (err) {
     console.log("err발생 in insertReadyItemToRefridge", err);
   } finally {
