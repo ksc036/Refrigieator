@@ -1,0 +1,1 @@
+adb push ./your-image.png /sdcard/Pictures/

@@ -34,12 +34,15 @@ export const pickImage = async (
       const response = await fetch("https://ocr.ksc036.store/ocr", {
         method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
+          // "Content-Type": "multipart/form-data",
         },
         body: formData,
       });
       // 응답 수신
+      // console.log(await response);/ㄱrrr
+      // console.log(await response.text());
       const data = await response.json();
+      console.log("response heere");
 
       // const data = await TextRecognition.recognize(
       //   result.assets[0].uri,
