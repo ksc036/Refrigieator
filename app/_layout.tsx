@@ -15,8 +15,8 @@ export default function RootLayout() {
   useEffect(() => {
     // 앱 실행 시 한 번 DB 셋업
     async function setupDatabase() {
-      const db = await getDb();
       try {
+        const db = await getDb();
         // await db.execAsync(`
         //   drop TABLE Refrigerator;
         //   drop TABLE  FOODITEMS;
@@ -25,35 +25,34 @@ export default function RootLayout() {
         //   drop TABLE  FRIDGE;
         //   drop TABLE  PRESTORAGE;
         // `);
-        await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS REFRIGERATOR (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          food_item_id Integer NOT NULL,
-          status TEXT NOT NULL,
-          created_date TEXT NOT NULL
-        );
-      `);
-
-        console.log("1 REFRIGERATOR setting");
-        await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS FOODITEMS (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          refrigerated_shelf_life INTEGER NOT NULL,
-          frozen_shelf_life INTEGER NOT NULL,
-          category TEXT
-        );
-      `);
-        console.log("2 FOODITEMS setting");
-        await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS PRESTORAGE (
-          id INTEGER PRIMARY KEY,
-          food_item_id INTEGER  NOT NULL,
-          status TEXT NOT NULL
-        );
-      `);
-        console.log("3 PRESTORAGE setting");
         await db.withTransactionAsync(async () => {
+          await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS REFRIGERATOR (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              food_item_id Integer NOT NULL,
+              status TEXT NOT NULL,
+              created_date TEXT NOT NULL
+            );
+          `);
+
+          console.log("1 REFRIGERATOR setting");
+          await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS FOODITEMS (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL,
+              refrigerated_shelf_life INTEGER NOT NULL,
+              frozen_shelf_life INTEGER NOT NULL,
+              category TEXT
+            );
+          `);
+          console.log("2 FOODITEMS setting");
+          await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS PRESTORAGE (
+              id INTEGER PRIMARY KEY,
+              food_item_id INTEGER  NOT NULL,
+              status TEXT NOT NULL
+            );
+          `);
           const result = await db.getFirstAsync(
             "SELECT COUNT(*) FROM FOODITEMS"
           );

@@ -11,6 +11,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Refrigerator, RefrigeratorItem } from "@/types";
 import { insertItemToRefridge } from "@/utils/insert";
 import { pickImage } from "@/utils/image";
+import { Alert } from "react-native";
 export default function FloatingButton() {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -26,6 +27,12 @@ export default function FloatingButton() {
     }, [isFreezer])
   );
   const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert("카메라 권한이 필요합니다.");
+      return;
+    }
     let result = await ImagePicker.launchCameraAsync({
       allowsEditing: false,
       quality: 1,
