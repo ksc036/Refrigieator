@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, TouchableOpacity, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -11,8 +11,19 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Refrigerator, RefrigeratorItem } from "@/types";
 import { insertItemToRefridge } from "@/utils/insert";
 import { pickImage } from "@/utils/image";
-import { Alert } from "react-native";
+import { Alert, TouchableWithoutFeedback } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+// import {  } from "react-native";
 export default function FloatingButton() {
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("blur", () => {
+      setIsOpen(false); // 화면 떠나면 닫기
+    });
+
+    return unsubscribe;
+  }, [navigation]);
   const router = useRouter();
   const dispatch = useDispatch();
   const isFreezer = useSelector((stat) => stat.storageMode.isfreezer);
@@ -66,33 +77,37 @@ export default function FloatingButton() {
     }
   };
   return (
-    <View style={styles.container}>
-      {isOpen && (
-        <View style={styles.menu}>
-          <TouchableOpacity style={styles.menuButton} onPress={takePhoto}>
-            <Ionicons name="camera" size={24} color="white" />
-            <Text style={styles.menuText}>사진 촬영</Text>
-          </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
+      <View style={StyleSheet.absoluteFillObject}>
+        <View style={styles.container}>
+          {isOpen && (
+            <View style={styles.menu}>
+              <TouchableOpacity style={styles.menuButton} onPress={takePhoto}>
+                <Ionicons name="camera" size={24} color="white" />
+                <Text style={styles.menuText}>사진 촬영</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuButton}
+                onPress={() => {
+                  pickImage(dispatch, router, setIsOpen);
+                }}
+              >
+                <Ionicons name="images" size={24} color="white" />
+                <Text style={styles.menuText}>갤러리 선택</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* 플로팅 버튼 */}
           <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => {
-              pickImage(dispatch, router, setIsOpen);
-            }}
+            style={styles.button}
+            onPress={() => setIsOpen(!isOpen)}
           >
-            <Ionicons name="images" size={24} color="white" />
-            <Text style={styles.menuText}>갤러리 선택</Text>
+            <Ionicons name={isOpen ? "close" : "add"} size={30} color="white" />
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* 플로팅 버튼 */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => setIsOpen(!isOpen)}
-      >
-        <Ionicons name={isOpen ? "close" : "add"} size={30} color="white" />
-      </TouchableOpacity>
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -136,5 +151,9 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
 });

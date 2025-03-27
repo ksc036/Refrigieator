@@ -8,6 +8,7 @@ import { CardStyleInterpolators } from "@react-navigation/stack";
 import { TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FOOD_ITEMS_QUERY } from "@/services/itemQueries";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   const segments = useSegments();
@@ -70,36 +71,38 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ReduxProvider>
-      <Stack
-        initialRouteName="(tabs)"
-        screenOptions={{
-          title: activeSegment,
-          headerStyle: { backgroundColor: "#fff" },
-          headerTintColor: "#007AFF",
-          animation: "slide_from_right",
-          headerRight: () => (
-            <TouchableOpacity onPress={() => router.push("/search")}>
-              <View style={{ marginRight: 16 }}>
-                <Ionicons name="search" size={24} color="#007AFF" />
-              </View>
-            </TouchableOpacity>
-          ),
-        }}
-      >
-        <Stack.Screen
-          name="(tabs)"
-          // options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="search"
-          options={{ title: "검색" }} // 검색 화면
-        />
-        <Stack.Screen
-          name="+not-found"
-          options={{ title: "페이지를 찾을 수 없음" }}
-        />
-      </Stack>
-    </ReduxProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ReduxProvider>
+        <Stack
+          initialRouteName="(tabs)"
+          screenOptions={{
+            title: activeSegment,
+            headerStyle: { backgroundColor: "#fff" },
+            headerTintColor: "#007AFF",
+            animation: "slide_from_right",
+            headerRight: () => (
+              <TouchableOpacity onPress={() => router.push("/search")}>
+                <View style={{ marginRight: 16 }}>
+                  <Ionicons name="search" size={24} color="#007AFF" />
+                </View>
+              </TouchableOpacity>
+            ),
+          }}
+        >
+          <Stack.Screen
+            name="(tabs)"
+            // options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="search"
+            options={{ title: "검색" }} // 검색 화면
+          />
+          <Stack.Screen
+            name="+not-found"
+            options={{ title: "페이지를 찾을 수 없음" }}
+          />
+        </Stack>
+      </ReduxProvider>
+    </GestureHandlerRootView>
   );
 }
