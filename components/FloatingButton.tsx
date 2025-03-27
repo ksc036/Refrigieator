@@ -3,17 +3,12 @@ import { View, TouchableOpacity, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { getDb } from "@/services/database";
-import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
-import { addFreezer, addFridge, setText } from "@/store/storageModeSlice";
+import { setText } from "@/store/storageModeSlice";
 import { useFocusEffect } from "@react-navigation/native";
-import { Refrigerator, RefrigeratorItem } from "@/types";
-import { insertItemToRefridge } from "@/utils/insert";
 import { pickImage } from "@/utils/image";
 import { Alert, TouchableWithoutFeedback } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-// import {  } from "react-native";
 export default function FloatingButton() {
   const navigation = useNavigation();
 
@@ -27,9 +22,6 @@ export default function FloatingButton() {
   const router = useRouter();
   const dispatch = useDispatch();
   const isFreezer = useSelector((stat) => stat.storageMode.isfreezer);
-  const freezer = useSelector((stat) => stat.storageMode.freezer);
-  const fridge = useSelector((stat) => stat.storageMode.fridge);
-  const text = useSelector((stat) => stat.storageMode.text);
   const [isOpen, setIsOpen] = useState(false);
 
   useFocusEffect(
@@ -77,37 +69,42 @@ export default function FloatingButton() {
     }
   };
   return (
-    <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
-      <View style={StyleSheet.absoluteFillObject}>
-        <View style={styles.container}>
-          {isOpen && (
-            <View style={styles.menu}>
-              <TouchableOpacity style={styles.menuButton} onPress={takePhoto}>
-                <Ionicons name="camera" size={24} color="white" />
-                <Text style={styles.menuText}>사진 촬영</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuButton}
-                onPress={() => {
-                  pickImage(dispatch, router, setIsOpen);
-                }}
-              >
-                <Ionicons name="images" size={24} color="white" />
-                <Text style={styles.menuText}>갤러리 선택</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+    <>
+      {/* 오버레이와 메뉴: isOpen일 때만 화면을 덮음 */}
+      {isOpen && (
+        <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
+          <View style={styles.overlay} pointerEvents="auto">
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.menu}>
+                <TouchableOpacity style={styles.menuButton} onPress={takePhoto}>
+                  <Ionicons name="camera" size={24} color="white" />
+                  <Text style={styles.menuText}>사진 촬영</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuButton}
+                  onPress={() => {
+                    pickImage(dispatch, router, setIsOpen);
+                  }}
+                >
+                  <Ionicons name="images" size={24} color="white" />
+                  <Text style={styles.menuText}>갤러리 선택</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      )}
 
-          {/* 플로팅 버튼 */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setIsOpen(!isOpen)}
-          >
-            <Ionicons name={isOpen ? "close" : "add"} size={30} color="white" />
-          </TouchableOpacity>
-        </View>
+      {/* 플로팅 버튼만 별도로, 아래 UI 터치 통과 가능하게 */}
+      <View style={styles.container} pointerEvents="box-none">
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setIsOpen(!isOpen)}
+        >
+          <Ionicons name={isOpen ? "close" : "add"} size={30} color="white" />
+        </TouchableOpacity>
       </View>
-    </TouchableWithoutFeedback>
+    </>
   );
 }
 
@@ -117,12 +114,12 @@ const styles = StyleSheet.create({
     bottom: 80,
     right: 20,
     alignItems: "center",
+    pointerEvents: "box-none", // ⭐ 핵심: 아래 터치 통과 허용
   },
   menu: {
-    marginBottom: 10,
-    alignItems: "center",
-    // borderWidth: 2,
-    // borderColor: "black",
+    bottom: 150,
+    right: 20,
+    position: "absolute",
   },
   menuButton: {
     flexDirection: "row",
@@ -154,6 +151,8 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
+    backgroundColor: "transparent", // or 'rgba(0,0,0,0.1)' for dim effect
+    zIndex: 999,
+    justifyContent: "flex-end", // 메뉴가 아래에 붙게
   },
 });
